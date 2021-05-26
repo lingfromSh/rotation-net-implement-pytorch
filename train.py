@@ -75,7 +75,7 @@ class TrainCommand(Command):
             "type": "input",
             "name": "viewpoint_num",
             "message": "Viewpoint num:",
-            "default": "12",
+            "default": "80",
         }
         viewpoint_num = int(prompt(viewpoint_menu)["viewpoint_num"])
 
@@ -192,7 +192,7 @@ class TrainCommand(Command):
 
         model.train()
         for epoch in range(epoch, epoch_amount + 1):
-
+            epoch_start = time.time()
             print(f"============= Epoch {epoch} =============")
             adjust_learning_rate(optimizer, epoch, lr)
             random_input(train_dataset, viewpoint_num)
@@ -217,14 +217,8 @@ class TrainCommand(Command):
                     ),
                 )
 
-                final_possibility = (
-                    output_possibility.view(
-                        -1, viewpoint_num * viewpoint_num, categories_num
-                    )
-                    .data.cpu()
-                    .numpy()
-                )
-                final_possibility = final_possibility.transpose(1, 2, 0)
+                final_possibility = output_possibility.view(-1, viewpoint_num * viewpoint_num, categories_num)
+                final_possibility = final_possibility.permute(1, 2, 0)
 
                 scores = torch.zeros(matrix.shape[0], categories_num, object_num).cuda()
                 for i in range(matrix.shape[0]):
@@ -237,7 +231,7 @@ class TrainCommand(Command):
                 labels = torch.full((viewpoint_num * viewpoint_num * object_num, ), fill_value=categories_num)
 
                 for i in range(object_num):
-                    j_max = np.argmax(scores[:, targets[i * viewpoint_num], i])
+                    j_max = torch.argmax(scores[:, targets[i * viewpoint_num], i])
                     for j in range(matrix.shape[1]):
                         labels[
                             i * viewpoint_num * viewpoint_num
@@ -262,6 +256,7 @@ class TrainCommand(Command):
                         f"\nCur Batch Loss - {losses.val}"
                     )
 
+            print(f"Epoch Total Time Cost: {time.time() - epoch_start}")
             if epoch % save_freq == 0:
                 torch.save(
                     {"model": model, "epoch": epoch, "lr": lr, "optimizer": optimizer},

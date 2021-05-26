@@ -45,7 +45,7 @@ class TestCommand(Command):
 
         test_dataset = DataLoader(
             ImageFolder(
-                "data/ModelNet40v2/modelnet/test", 
+                "data/ModelNet40v2/modelnet/test",
                 transform=rotation_net_regulation_transformer
             ),
             pin_memory=True,
@@ -69,7 +69,8 @@ class TestCommand(Command):
             # compute scores for all the candidate poses (see Eq.(6))
             for j in range(matrix.shape[0]):
                 for k in range(matrix.shape[1]):
-                    scores[j] = scores[j] + output_[matrix[j][k] * viewpoint_num + k]
+                    scores[j] = scores[j] + \
+                        output_[matrix[j][k] * viewpoint_num + k]
             # for each sample #n, determine the best pose that maximizes the score (for the top class)
             for n in range(batch_size):
                 j_max = int(np.argmax(scores[:, :, n]) / scores.shape[1])
@@ -103,7 +104,8 @@ class TestCommand(Command):
                 output = torch.log_softmax(output, dim=1)
                 output = output[:, :-1] - torch.t(
                     output[:, -1].repeat(1, output.size(1) - 1).view(output.size(1) - 1, -1))
-                output = output.view(-1, viewpoint_num * viewpoint_num, num_classes)
+                output = output.view(-1, viewpoint_num *
+                                     viewpoint_num, num_classes)
 
                 # measure accuracy and record loss
                 prec1, prec5 = my_accuracy(output.data, targets, topk=(1, 5))
