@@ -1,5 +1,9 @@
 # Rotation Net
 
+A project for learning.
+
+Rotation Net is a kind of net focuses on multi-view images to find a 3d-object. So, you pro
+
 ## Requirements
 
 - python3+
@@ -12,4 +16,4 @@
 
 ## Training
 
-You can run `main.py` to choose `Training` and input params to begin your model training.
+You can run `main.py` , choose option `Training` and give your params to begin your model training.

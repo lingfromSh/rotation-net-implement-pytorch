@@ -16,7 +16,7 @@ from exceptions import UnsupportedBaselineModelError
 from models import Model
 from transforms import rotation_net_regulation_transformer
 from utils import AverageMeter, adjust_learning_rate, random_input
-from test import TestCommand
+from validate import ValidateCommand
 
 
 class TrainCommand(Command):
@@ -263,4 +263,4 @@ class TrainCommand(Command):
                     f="rotation_net.pth",
                 )
 
-                TestCommand.test(batch_size, viewpoint_num)
+                ValidateCommand.validate(batch_size, viewpoint_num)

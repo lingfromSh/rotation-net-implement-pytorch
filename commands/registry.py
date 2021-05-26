@@ -7,9 +7,9 @@ main_command_list.register_default_command(ExitCommand(name="Exit"))
 
 def register_commands():
     from train import TrainCommand
-    from test import TestCommand
+    from validate import ValidateCommand
     main_command_list.register_command(TrainCommand(name="Training"))
-    main_command_list.register_command(TestCommand(name="Testing"))
+    main_command_list.register_command(ValidateCommand(name="Validating"))
 
 
 register_commands()

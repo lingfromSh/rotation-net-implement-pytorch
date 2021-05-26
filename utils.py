@@ -1,9 +1,8 @@
 import os
+from typing import Tuple
 
 import numpy as np
 import torch
-from torch.utils import data
-from torch.utils.data.sampler import BatchSampler
 
 
 class AverageMeter:
@@ -67,22 +66,36 @@ def random_input(dataset, viewpoint_num):
     dataset.dataset.samples = dataset.dataset.imgs
 
 
-if __name__ == "__main__":
-    from torch.utils.data import DataLoader
-    from torchvision.datasets import ImageFolder
-    from transforms import rotation_net_regulation_transformer
+def rotation_net_accuracy(predict: torch.Tensor,
+                          target: torch.Tensor,
+                          matrix: np.ndarray,
+                          viewpoint_num: int,
+                          top_k: Tuple):
+    """Computes the precision@k for the specified values of k"""
+    max_k = max(top_k)
+    target = target[0:-1:viewpoint_num]
+    batch_size = target.shape[0]
 
-    train_dataset = DataLoader(
-        ImageFolder(
-            "data/ModelNet40v1/modelnet/train",
-            transform=rotation_net_regulation_transformer,
-        ),
-        batch_size=120,
-        shuffle=False,
-        drop_last=True,
-    )
-    for samples, targets in train_dataset:
-        print(samples, targets)
-    print(train_dataset.dataset.imgs[0:12])
-    random_input(train_dataset, 12)
-    print(train_dataset.dataset.imgs[0:12])
+    num_classes = predict.shape[2]
+    predict = predict.cpu().numpy()
+    predict = predict.transpose(1, 2, 0)
+    scores = np.zeros((matrix.shape[0], num_classes, batch_size))
+    output = torch.zeros((batch_size, num_classes))
+    # compute scores for all the candidate poses (see Eq.(6))
+    for j in range(matrix.shape[0]):
+        for k in range(matrix.shape[1]):
+            scores[j] = scores[j] + predict[matrix[j][k] * viewpoint_num + k]
+    # for each sample #n, determine the best pose that maximizes the score (for the top class)
+    for n in range(batch_size):
+        j_max = int(np.argmax(scores[:, :, n]) / scores.shape[1])
+        output[n] = torch.FloatTensor(scores[j_max, :, n])
+    output = output.cuda()
+
+    _, pred = output.topk(max_k, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.contiguous().view(1, -1).expand_as(pred))
+
+    res = []
+    for k in top_k:
+        res.append(correct[:k].reshape(-1).float().sum(0).mean())
+    return res
